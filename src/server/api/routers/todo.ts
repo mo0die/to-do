@@ -2,7 +2,7 @@ import { z } from "zod";
 import { createTRPCRouter, protectedProcedure } from "~/server/api/trpc";
 import { todos } from "~/server/db/schema";
 import { TRPCError } from "@trpc/server";
-import { eq } from "drizzle-orm";
+import { eq ,and} from "drizzle-orm";
 
 export const todoRouter = createTRPCRouter({
   createToDo: protectedProcedure
@@ -44,6 +44,7 @@ export const todoRouter = createTRPCRouter({
         createdAt: todos.createdAt,
       })
       .from(todos)
+      .where(eq(todos.createdById, ctx.session.user.id))
       .orderBy(todos.createdAt, "desc");
 
     return items;
@@ -54,19 +55,31 @@ export const todoRouter = createTRPCRouter({
       z.object({
         id: z.number(),
         isCompleted: z.boolean(),
-      }),
+    }),
     )
     .mutation(async ({ input, ctx }) => {
       // Ensure you're importing the table and the eq operator correctly
-      const result = await ctx.db
+    const result = await ctx.db
         .update(todos)
         .set({ isCompleted: input.isCompleted })
         .where(eq(todos.id, input.id))
         .returning(); // returns the updated row(s)
 
       // Optionally check that the update affected a row
-      if (!result.length) {
+    if (!result.length) {
         throw new Error("No todo updated");
+    }
+    }),
+    deteleItem: protectedProcedure
+    .input(
+      z.object({
+        id: z.number(),
+    }),
+    ).mutation(async ({ input, ctx }) => {
+      const result = await ctx.db.delete(todos).where(
+        and(eq(todos.id, input.id),eq(todos.createdById, ctx.session.user.id))).returning();
+      if (!result.length) {
+        throw new Error("No todo deleted");
       }
     }),
 });

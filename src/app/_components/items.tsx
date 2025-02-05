@@ -17,13 +17,11 @@ import {
 import {
   Form,
   FormControl,
-  FormDescription,
   FormField,
   FormItem,
   FormLabel,
   FormMessage,
 } from "~/components/ui/form";
-import { Checkbox } from "~/components/ui/checkbox";
 import {
   Select,
   SelectContent,
@@ -132,30 +130,7 @@ export function AddTodoForm({ session }, ...props) {
               </FormItem>
             )}
           />
-
-          {/* Checkbox */}
-          <FormField
-            control={form.control}
-            name="isCompleted"
-            render={({ field }) => (
-              <FormItem className="flex flex-row items-start space-x-3 space-y-0 rounded-md border p-4">
-                <FormControl>
-                  <Checkbox
-                    checked={field.value}
-                    onCheckedChange={field.onChange}
-                  />
-                </FormControl>
-                <div className="space-y-1 leading-none">
-                  <FormLabel className="text-sm font-medium">
-                    Mark as completed
-                  </FormLabel>
-                  <FormDescription className="text-xs">
-                    Toggle if task is already completed
-                  </FormDescription>
-                </div>
-              </FormItem>
-            )}
-          />
+   
         </div>
 
         <Button
@@ -187,9 +162,22 @@ export function GetItems() {
     },
   });
 
+  const deleteItem = api.todo.deteleItem.useMutation({
+    onSuccess: () => {
+      utils.todo.getItems.invalidate();
+    },
+    onError: (error) => {
+      toast.error("Failed to delete todo");
+      console.error("Mutation error:", error);
+    },
+  })
   const handleUpdateCompletion = (id: number, isCompleted: boolean) => {
     setLoadingId(id); // Set loading state for the clicked item
     updateItem.mutate({ id, isCompleted });
+  };
+
+  const handleDeleteItem = (id: number) => {
+    deleteItem.mutate({ id });
   };
 
   if (isLoading) return <div className="text-sm text-gray-500">Loading...</div>;
@@ -202,7 +190,8 @@ export function GetItems() {
             <TableHead className="w-[50%]">Task</TableHead>
             <TableHead>Category</TableHead>
             <TableHead>Status</TableHead>
-            <TableHead className="text-right">Actions</TableHead>
+            <TableHead className="">Mark</TableHead>
+            <TableHead className="">Delete</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
@@ -238,6 +227,19 @@ export function GetItems() {
                     : item.isCompleted
                       ? "Undo"
                       : "Complete"}
+                </Button>
+              </TableCell>
+              <TableCell className="text-right">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="h-8 px-3 text-xs"
+                  onClick={() =>
+                    handleDeleteItem(item.id)
+                  }
+                  disabled={loadingId === item.id}
+                >
+                  {loadingId === item.id ? "Deleting..." : "Delete"}
                 </Button>
               </TableCell>
             </TableRow>
