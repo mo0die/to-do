@@ -30,6 +30,7 @@ import {
   SelectValue,
 } from "~/components/ui/select";
 import { Textarea } from "~/components/ui/textarea";
+import type { Session } from "next-auth";
 
 const formSchema = z.object({
   text: z.string().min(1, "Task description is required"),
@@ -45,8 +46,10 @@ const categories = [
   { item: "Personal", id: "2" },
   { item: "Other", id: "3" },
 ];
-
-export function AddTodoForm({ session }, ...props) {
+interface AddTodoFormProps {
+  session: Session;
+}
+export function AddTodoForm({ session }: AddTodoFormProps) {
   const utils = api.useUtils();
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -63,7 +66,7 @@ export function AddTodoForm({ session }, ...props) {
   const createItem = api.todo.createToDo.useMutation({
     onSuccess: () => {
       form.reset();
-      utils.todo.getItems.invalidate();
+      utils.todo.getItems.invalidate().catch(console.error);
       toast.success("Todo added successfully");
     },
     onError: (error) => {
@@ -152,7 +155,7 @@ export function GetItems() {
 
   const updateItem = api.todo.updateCompletion.useMutation({
     onSuccess: () => {
-      utils.todo.getItems.invalidate();
+      utils.todo.getItems.invalidate().catch(console.error);
       setLoadingId(null); // reset loading state on success
     },
     onError: (error) => {
@@ -164,7 +167,7 @@ export function GetItems() {
 
   const deleteItem = api.todo.deteleItem.useMutation({
     onSuccess: () => {
-      utils.todo.getItems.invalidate();
+      utils.todo.getItems.invalidate().catch(console.error);
     },
     onError: (error) => {
       toast.error("Failed to delete todo");

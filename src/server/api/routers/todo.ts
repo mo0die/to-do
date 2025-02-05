@@ -45,7 +45,7 @@ export const todoRouter = createTRPCRouter({
       })
       .from(todos)
       .where(eq(todos.createdById, ctx.session.user.id))
-      .orderBy(todos.createdAt, "desc");
+      .orderBy(todos.createdAt);
 
     return items;
   }),
